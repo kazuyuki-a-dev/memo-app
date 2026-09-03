@@ -28,8 +28,8 @@ CREATE TABLE tags (
 
 CREATE TABLE memo_tag (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    memo_id INT NOT null,
-    tag_id INT NOT null,
+    memo_id INT NOT NULL,
+    tag_id INT NOT NULL,
     FOREIGN KEY (memo_id) REFERENCES memos(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
