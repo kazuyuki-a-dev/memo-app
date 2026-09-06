@@ -48,36 +48,39 @@ unset($_SESSION['error']);
 </head>
 
 <body>
-    <h1>メモ編集</h1>
+    <div class="container">
+        <h1>メモ編集</h1>
 
-    <?php if ($error !== ''): ?>
-        <p class="error-message"><?php echo htmlspecialchars($error); ?></p>
-    <?php endif; ?>
-    <form action="edit_process.php" method="post" enctype="multipart/form-data">
-        <label for="title">タイトル</label>
-        <input type="text" name="title" id="title" value="<?php echo htmlspecialchars($memo['title'] ?? ''); ?>">
-        <label for="content">本文</label>
-        <textarea name="content" id="content" rows="8"><?php echo htmlspecialchars($memo['content'] ?? ''); ?></textarea>
-        <label for="url">参照URL(任意)</label>
-        <input type="text" name="url" id="url" value="<?php echo htmlspecialchars($memo['url'] ?? ''); ?>">
-        <label for="image">画像(任意・jpg/png/gif、2MBまで)</label>
+        <?php if ($error !== ''): ?>
+            <p class="error-message"><?php echo htmlspecialchars($error); ?></p>
+        <?php endif; ?>
+        <form action="edit_process.php" method="post" enctype="multipart/form-data">
+            <label for="title">タイトル</label>
+            <input type="text" name="title" id="title" value="<?php echo htmlspecialchars($memo['title'] ?? ''); ?>">
+            <label for="content">本文</label>
+            <textarea name="content" id="content" rows="8"><?php echo htmlspecialchars($memo['content'] ?? ''); ?></textarea>
+            <label for="url">参照URL(任意)</label>
+            <input type="text" name="url" id="url" value="<?php echo htmlspecialchars($memo['url'] ?? ''); ?>">
+            <label for="image">画像(任意・jpg/png/gif、2MBまで)</label>
 
-        <div class="memo-current-image">
-            <p id="image-preview-label"><?php echo !empty($memo['image']) ? '現在の画像:' : ''; ?></p>
-            <img id="image-preview"
-                src="<?php echo !empty($memo['image']) ? htmlspecialchars($memo['image']) : ''; ?>"
-                alt=""
-                style="<?php echo empty($memo['image']) ? 'display:none;' : ''; ?>">
-        </div>
+            <div class="memo-current-image">
+                <p id="image-preview-label"><?php echo !empty($memo['image']) ? '現在の画像:' : ''; ?></p>
+                <img id="image-preview"
+                    src="<?php echo !empty($memo['image']) ? htmlspecialchars($memo['image']) : ''; ?>"
+                    alt=""
+                    style="<?php echo empty($memo['image']) ? 'display:none;' : ''; ?>">
+            </div>
 
-        <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/gif" onchange="previewImage(this)">
-        <label for="tags">タグ(任意・カンマ区切りで複数指定可)</label>
-        <input type="text" name="tags" id="tags" placeholder="例: 仕事, アイデア" value="<?php echo htmlspecialchars($memo['tag_names'] ?? ''); ?>">
-        <input type="hidden" name="id" value="<?php echo (int) $memo['id']; ?>">
-        <button type="submit">更新する</button>
-    </form>
-    <a href="show.php?id=<?php echo (int) $memo['id']; ?>">詳細に戻る</a>
-    <a href="index.php">一覧に戻る</a>
+            <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/gif" onchange="previewImage(this)">
+            <label for="tags">タグ(任意・カンマ区切りで複数指定可)</label>
+            <input type="text" name="tags" id="tags" placeholder="例: 仕事, アイデア" value="<?php echo htmlspecialchars($memo['tag_names'] ?? ''); ?>">
+            <input type="hidden" name="id" value="<?php echo (int) $memo['id']; ?>">
+            <button type="submit">更新する</button>
+        </form>
+        <a href="show.php?id=<?php echo (int) $memo['id']; ?>">詳細に戻る</a>
+        <a href="index.php">一覧に戻る</a>
+    </div>
+
     <script>
         function previewImage(input) {
             const preview = document.getElementById('image-preview');

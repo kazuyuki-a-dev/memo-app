@@ -59,7 +59,7 @@ function previewContent(string $content, int $length = 60): string
                 <a href="index.php">クリア</a>
             <?php endif; ?>
         </form>
-        <a href="export.php?keyword=<?php echo urlencode($keyword); ?>">CSVエクスポート</a>
+        <a href="export.php?keyword=<?php echo urlencode($keyword); ?>" class="btn-export">CSVエクスポート</a>
         <?php if (empty($memos)): ?>
             <p class="empty-message">まだメモがありません。</p>
         <?php else: ?>
