@@ -42,28 +42,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $pdo = getPdo();
 
-    $stmt = $pdo->prepare('INSERT INTO memos (user_id, title, content, url, image) VALUES (:user_id, :title, :content, :url, :image)');
-    $stmt->execute([
-        'user_id' => $_SESSION['user_id'],
-        'title' => $title,
-        'content' => $content,
-        'url' => $url,
-        'image' => $imagePath,
-    ]);
-    $memoId = (int) $pdo->lastInsertId();
+    $memoModel = new Memo($pdo);
+    $imageForDb = $imagePath !== '' ? $imagePath : null;
+    $urlForDb = $url !== '' ? $url : null;
 
-    $tagNames = parseTagNames($tagsInput);
+    $memoId = $memoModel->create($_SESSION['user_id'], $title, $content, $urlForDb, $imageForDb);
+
+    $tagNames = Tag::parseNames($tagsInput);
     if (!empty($tagNames)) {
-        $tagIds = findOrCreateTagIds($pdo, $tagNames);
-
-        $linkStmt = $pdo->prepare('INSERT INTO memo_tag (memo_id, tag_id) VALUES (:memo_id, :tag_id)');
-        foreach ($tagIds as $tagId) {
-            $linkStmt->execute([
-                'memo_id' => $memoId,
-                'tag_id' => $tagId,
-            ]);
-        }
+        $tag = new Tag($pdo);
+        $tagIds = $tag->findOrCreateIds($tagNames);
+        $memoModel->syncTags($memoId, $tagIds);
     }
+
     unset($_SESSION['old']);
     header('Location: index.php');
     exit;
