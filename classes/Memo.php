@@ -121,4 +121,27 @@ class Memo
             ]);
         }
     }
+    public function findAllByUserForExport(int $userId, string $keyword): array
+    {
+        $sql = 'SELECT m.title, m.content, m.url, m.created_at, m.updated_at,
+                GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") AS tag_names
+            FROM memos m
+            LEFT JOIN memo_tag mt ON mt.memo_id = m.id
+            LEFT JOIN tags t ON t.id = mt.tag_id
+            WHERE m.user_id = :user_id';
+
+        $params = ['user_id' => $userId];
+
+        if ($keyword !== '') {
+            $sql .= ' AND (m.title LIKE :keyword OR m.content LIKE :keyword)';
+            $params['keyword'] = '%' . $keyword . '%';
+        }
+
+        $sql .= ' GROUP BY m.id ORDER BY m.updated_at DESC';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
 }
