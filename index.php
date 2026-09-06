@@ -9,6 +9,16 @@ requireLogin();
 
 $pdo = getPdo();
 $keyword = trim($_GET['keyword'] ?? '');
+$perPage = 5; // 1ページに表示する件数
+$page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT);
+if ($page === false || $page < 1) {
+    $page = 1;
+}
+$offset = ($page - 1) * $perPage;
+
+$countSql = 'SELECT COUNT(DISTINCT m.id) AS total
+             FROM memos m
+             WHERE m.user_id = :user_id';
 
 $sql = 'SELECT m.id, m.title, m.content, m.url, m.image, m.created_at, m.updated_at,
             GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") AS tag_names
@@ -20,11 +30,20 @@ $sql = 'SELECT m.id, m.title, m.content, m.url, m.image, m.created_at, m.updated
 $params = ['user_id' => $_SESSION['user_id']];
 
 if ($keyword !== '') {
-    $sql .= ' AND (m.title LIKE :keyword OR m.content LIKE :keyword)';
+    $condition = ' AND (m.title LIKE :keyword OR m.content LIKE :keyword)';
+    $countSql .= $condition;
+    $sql .= $condition;
     $params['keyword'] = '%' . $keyword . '%';
 }
 
-$sql .= ' GROUP BY m.id ORDER BY m.updated_at DESC';
+// 全体件数を取得(ページ数の計算に使う)
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$totalCount = (int) $countStmt->fetch()['total'];
+$totalPages = (int) ceil($totalCount / $perPage);
+
+// 一覧を取得(LIMIT・OFFSETはプレースホルダーではなく、整数チェック済みの値を直接埋め込む)
+$sql .= " GROUP BY m.id ORDER BY m.updated_at DESC LIMIT {$perPage} OFFSET {$offset}";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -121,7 +140,24 @@ function previewContent(string $content, int $length = 60): string
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-
+        <?php if ($totalPages > 1): ?>
+            <div class="pagination">
+                <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                    <?php
+                    $query = ['page' => $p];
+                    if ($keyword !== '') {
+                        $query['keyword'] = $keyword;
+                    }
+                    $url = 'index.php?' . http_build_query($query);
+                    ?>
+                    <?php if ($p === $page): ?>
+                        <span class="current-page"><?php echo $p; ?></span>
+                    <?php else: ?>
+                        <a href="<?php echo htmlspecialchars($url); ?>"><?php echo $p; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </body>
 
