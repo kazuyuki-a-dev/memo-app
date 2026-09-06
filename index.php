@@ -9,46 +9,17 @@ requireLogin();
 
 $pdo = getPdo();
 $keyword = trim($_GET['keyword'] ?? '');
-$perPage = 5; // 1ページに表示する件数
+$perPage = 5;
 $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT);
 if ($page === false || $page < 1) {
     $page = 1;
 }
 $offset = ($page - 1) * $perPage;
-
-$countSql = 'SELECT COUNT(DISTINCT m.id) AS total
-             FROM memos m
-             WHERE m.user_id = :user_id';
-
-$sql = 'SELECT m.id, m.title, m.content, m.url, m.image, m.created_at, m.updated_at,
-            GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") AS tag_names
-        FROM memos m
-        LEFT JOIN memo_tag mt ON mt.memo_id = m.id
-        LEFT JOIN tags t ON t.id = mt.tag_id
-        WHERE m.user_id = :user_id';
-
-$params = ['user_id' => $_SESSION['user_id']];
-
-if ($keyword !== '') {
-    $condition = ' AND (m.title LIKE :keyword OR m.content LIKE :keyword)';
-    $countSql .= $condition;
-    $sql .= $condition;
-    $params['keyword'] = '%' . $keyword . '%';
-}
-
-// 全体件数を取得(ページ数の計算に使う)
-$countStmt = $pdo->prepare($countSql);
-$countStmt->execute($params);
-$totalCount = (int) $countStmt->fetch()['total'];
+$memoModel = new Memo($pdo);
+$result = $memoModel->findAllByUser($_SESSION['user_id'], $keyword, $perPage, $offset);
+$memos = $result['memos'];
+$totalCount = $result['totalCount'];
 $totalPages = (int) ceil($totalCount / $perPage);
-
-// 一覧を取得(LIMIT・OFFSETはプレースホルダーではなく、整数チェック済みの値を直接埋め込む)
-$sql .= " GROUP BY m.id ORDER BY m.updated_at DESC LIMIT {$perPage} OFFSET {$offset}";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$memos = $stmt->fetchAll();
-
 // 本文プレビュー用に短く切り詰める
 function previewContent(string $content, int $length = 60): string
 {

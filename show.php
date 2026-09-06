@@ -14,20 +14,8 @@ if ($id === false) {
 }
 $pdo = getPdo();
 
-$sql = 'SELECT m.id, m.title, m.content, m.url, m.image, m.created_at, m.updated_at,
-               GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") AS tag_names
-        FROM memos m
-        LEFT JOIN memo_tag mt ON mt.memo_id = m.id
-        LEFT JOIN tags t ON t.id = mt.tag_id
-        WHERE m.id = :id AND m.user_id = :user_id
-        GROUP BY m.id';
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-    'id' => $id,
-    'user_id' => $_SESSION['user_id'],
-]);
-$memo = $stmt->fetch();
+$memoModel = new Memo($pdo);
+$memo = $memoModel->findById($id, $_SESSION['user_id']);
 
 if (!$memo) {
     header('Location: index.php');

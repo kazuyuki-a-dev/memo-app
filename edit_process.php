@@ -35,15 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $pdo = getPdo();
+    $memoModel = new Memo($pdo);
 
-    // まず「自分のメモかどうか」を確認する(他人のメモを書き換えられないようにする安全装置)
-    $checkStmt = $pdo->prepare('SELECT image FROM memos WHERE id = :id AND user_id = :user_id');
-    $checkStmt->execute([
-        'id' => $id,
-        'user_id' => $_SESSION['user_id'],
-    ]);
-    $currentMemo = $checkStmt->fetch();
-
+    // 自分のメモかどうかを確認しながら、現在の画像パスを取得する
+    $currentMemo = $memoModel->findById($id, $_SESSION['user_id']);
     if (!$currentMemo) {
         header('Location: index.php');
         exit;
@@ -62,38 +57,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $pdo->prepare(
-        'UPDATE memos SET title = :title, content = :content, url = :url, image = :image WHERE id = :id AND user_id = :user_id'
-    );
-    $stmt->execute([
-        'title' => $title,
-        'content' => $content,
-        'url' => $url !== '' ? $url : null,
-        'image' => $imagePath !== '' ? $imagePath : null,
-        'id' => $id,
-        'user_id' => $_SESSION['user_id'],
-    ]);
+    $urlForDb = $url !== '' ? $url : null;
+    $memoModel->update($id, $_SESSION['user_id'], $title, $content, $urlForDb, $imagePath);
 
-    // タグは一旦すべて削除してから、新しい内容で作り直す
-    $deleteTagsStmt = $pdo->prepare('DELETE FROM memo_tag WHERE memo_id = :memo_id');
-    $deleteTagsStmt->execute(['memo_id' => $id]);
-
-    $tagNames = parseTagNames($tagsInput);
+    $tagNames = Tag::parseNames($tagsInput);
+    $tagIds = [];
     if (!empty($tagNames)) {
-        $tagIds = findOrCreateTagIds($pdo, $tagNames);
-
-        $linkStmt = $pdo->prepare('INSERT INTO memo_tag (memo_id, tag_id) VALUES (:memo_id, :tag_id)');
-        foreach ($tagIds as $tagId) {
-            $linkStmt->execute([
-                'memo_id' => $id,
-                'tag_id' => $tagId,
-            ]);
-        }
+        $tag = new Tag($pdo);
+        $tagIds = $tag->findOrCreateIds($tagNames);
     }
+    $memoModel->syncTags($id, $tagIds);
 
     header('Location: show.php?id=' . $id);
     exit;
 }
-
 header('Location: index.php');
 exit;

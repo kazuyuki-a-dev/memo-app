@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/classes/Tag.php';
+require_once __DIR__ . '/classes/Memo.php';
 // 名前のバリデーション
 function validateName(string $name): string
 {

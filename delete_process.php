@@ -16,12 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $pdo = getPdo();
 
-    // idとuser_idの両方を条件にすることで、他人のメモを削除できないようにする
-    $stmt = $pdo->prepare('DELETE FROM memos WHERE id = :id AND user_id = :user_id');
-    $stmt->execute([
-        'id' => $id,
-        'user_id' => $_SESSION['user_id'],
-    ]);
+    $memoModel = new Memo($pdo);
+    $memoModel->delete($id, $_SESSION['user_id']);
 
     header('Location: index.php');
     exit;
