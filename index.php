@@ -8,20 +8,26 @@ require_once __DIR__ . '/db.php';
 requireLogin();
 
 $pdo = getPdo();
+$keyword = trim($_GET['keyword'] ?? '');
 
 $sql = 'SELECT m.id, m.title, m.content, m.url, m.image, m.created_at, m.updated_at,
             GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ", ") AS tag_names
         FROM memos m
         LEFT JOIN memo_tag mt ON mt.memo_id = m.id
         LEFT JOIN tags t ON t.id = mt.tag_id
-        WHERE m.user_id = :user_id
-        GROUP BY m.id
-        ORDER BY m.updated_at DESC';
+        WHERE m.user_id = :user_id';
+
+$params = ['user_id' => $_SESSION['user_id']];
+
+if ($keyword !== '') {
+    $sql .= ' AND (m.title LIKE :keyword OR m.content LIKE :keyword)';
+    $params['keyword'] = '%' . $keyword . '%';
+}
+
+$sql .= ' GROUP BY m.id ORDER BY m.updated_at DESC';
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([
-    'user_id' => $_SESSION['user_id'],
-]);
+$stmt->execute($params);
 $memos = $stmt->fetchAll();
 
 // 本文プレビュー用に短く切り詰める
@@ -56,7 +62,13 @@ function previewContent(string $content, int $length = 60): string
         </div>
 
         <a href="create.php" class="btn-new">＋ 新規メモ作成</a>
-
+        <form action="index.php" method="get" class="search-form">
+            <input type="text" name="keyword" placeholder="タイトル・本文で検索" value="<?php echo htmlspecialchars($keyword); ?>">
+            <button type="submit">検索</button>
+            <?php if ($keyword !== ''): ?>
+                <a href="index.php">クリア</a>
+            <?php endif; ?>
+        </form>
         <?php if (empty($memos)): ?>
             <p class="empty-message">まだメモがありません。</p>
         <?php else: ?>
