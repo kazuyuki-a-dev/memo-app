@@ -4,3 +4,16 @@
   object-fit: cover;
   border-radius: 4px;
 }
+.memo-detail-image img {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  border-radius: 4px;
+}
+
+.memo-current-image img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+}
